@@ -34,19 +34,25 @@ file watching, search) behind Swift Concurrency actors.
 > (`VSSWIFT_RENDER`), so these are the real SwiftUI/AppKit workbench — not mockups.
 
 ### Editor + integrated terminal
-The file explorer, a TextKit 2 editor with live swift-syntax highlighting, the minimap,
-and a real PTY-backed terminal.
+The full workbench: the activity bar, a file explorer with type-aware icons, a TextKit 2
+editor with live swift-syntax highlighting, the minimap, and the revamped bottom panel.
+The integrated terminal is backed by a real PTY and rendered through a custom ANSI/OSC
+emulator, so prompts, colors and command output are cleanly formatted and word-wrapped —
+no leaked escape sequences. The panel tabs (Problems, Output, Debug Console, Terminal)
+carry icons, and the terminal input row has prompt, interrupt and clear affordances.
 
 ![VSSwift editor with explorer and integrated terminal](docs/screenshots/editor.png)
 
 ### Source Control
-A VSCode-style Git panel — staged/unstaged changes with status badges, a commit box,
-and the active branch in the status bar.
+A VSCode-style Git panel — staged/unstaged changes with status badges, a commit message
+box that commits to the active branch, and the current branch mirrored into the status
+bar. Refresh, stage, unstage and discard are wired to a real `git` backend.
 
 ![VSSwift Source Control panel](docs/screenshots/source-control.png)
 
 ### Workspace search
-Parallel, ripgrep-style regex search across the workspace with per-file results.
+Parallel, ripgrep-style regex search across the workspace, with per-file results showing
+the matching line and line number. Selecting a result opens the file in the editor.
 
 ![VSSwift workspace search](docs/screenshots/search.png)
 

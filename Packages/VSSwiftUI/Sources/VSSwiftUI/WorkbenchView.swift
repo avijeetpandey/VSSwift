@@ -94,9 +94,11 @@ public final class WorkbenchModel: ObservableObject {
 /// The root workbench layout faithfully recreating the VSCode hierarchy.
 public struct WorkbenchView: View {
     @ObservedObject var model: WorkbenchModel
+    @ObservedObject var appState: AppState
 
     public init(model: WorkbenchModel) {
         self.model = model
+        self.appState = model.appState
     }
 
     public var body: some View {
@@ -104,7 +106,7 @@ public struct WorkbenchView: View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 ActivityBarView(appState: model.appState, theme: theme)
-                if model.appState.isSidebarVisible {
+                if appState.isSidebarVisible {
                     SidebarView(appState: model.appState, theme: theme, explorer: model.explorer,
                                 git: model.git,
                                 searchQuery: $model.searchQuery, searchResults: model.searchResults,
@@ -116,7 +118,7 @@ public struct WorkbenchView: View {
                     EditorAreaView(appState: model.appState, theme: theme,
                                    editor: model.editor, completion: model.completion)
                         .frame(maxHeight: .infinity)
-                    if model.appState.isPanelVisible {
+                    if appState.isPanelVisible {
                         PanelView(appState: model.appState, theme: theme,
                                   terminal: model.terminal, problems: [])
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -127,8 +129,8 @@ public struct WorkbenchView: View {
         }
         .frame(minWidth: 920, minHeight: 620)
         .background(Palette.bg)
-        .animation(Motion.sidebar, value: model.appState.isSidebarVisible)
-        .animation(Motion.snappy, value: model.appState.isPanelVisible)
+        .animation(Motion.sidebar, value: appState.isSidebarVisible)
+        .animation(Motion.snappy, value: appState.isPanelVisible)
         .toolbar {
             ToolbarItemGroup {
                 Button { withAnimation(Motion.sidebar) { model.appState.toggleSidebar() } } label: {
