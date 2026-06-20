@@ -37,7 +37,8 @@ func colorSuite() -> TestSuite {
 }
 
 func sampleThemeData() -> Data {
-    let url = Bundle.module.url(forResource: "sample-theme", withExtension: "json", subdirectory: "Resources")!
+    let url = Bundle.module.url(
+        forResource: "sample-theme", withExtension: "json", subdirectory: "Resources")!
     return try! Data(contentsOf: url)
 }
 
@@ -51,7 +52,9 @@ func themeSuite() -> TestSuite {
     s.test("parses workbench colors") { t in
         let theme = try ThemeParser().parse(data: sampleThemeData())
         t.equal(theme.colors["editor.background"], VSSwiftColor(hex: "#1E1E1E"))
-        t.equal(theme.color("statusBar.background", fallback: .init(red: 0, green: 0, blue: 0)).hexString, "#007ACC")
+        t.equal(
+            theme.color("statusBar.background", fallback: .init(red: 0, green: 0, blue: 0)).hexString,
+            "#007ACC")
     }
     s.test("comma-separated scope string matches both") { t in
         let theme = try ThemeParser().parse(data: sampleThemeData())
@@ -65,10 +68,10 @@ func themeSuite() -> TestSuite {
     }
     s.test("longest-prefix scope wins") { t in
         let json = """
-        {"name":"T","type":"dark","colors":{},"tokenColors":[
-          {"scope":"keyword","settings":{"foreground":"#111111"}},
-          {"scope":"keyword.control","settings":{"foreground":"#222222"}}]}
-        """
+            {"name":"T","type":"dark","colors":{},"tokenColors":[
+              {"scope":"keyword","settings":{"foreground":"#111111"}},
+              {"scope":"keyword.control","settings":{"foreground":"#222222"}}]}
+            """
         let theme = try ThemeParser().parse(jsonString: json)
         t.equal(theme.style(forScope: "keyword.control.swift").foreground, VSSwiftColor(hex: "#222222"))
         t.equal(theme.style(forScope: "keyword.operator.swift").foreground, VSSwiftColor(hex: "#111111"))
@@ -137,8 +140,12 @@ func busAndConfigSuite() -> TestSuite {
         let bus = EventBus()
         let s1 = await bus.subscribe()
         let s2 = await bus.subscribe()
-        let t1 = Task { () -> AppEvent? in for await e in s1 { return e }; return nil }
-        let t2 = Task { () -> AppEvent? in for await e in s2 { return e }; return nil }
+        let t1 = Task { () -> AppEvent? in
+            for await e in s1 { return e }; return nil
+        }
+        let t2 = Task { () -> AppEvent? in
+            for await e in s2 { return e }; return nil
+        }
         try await Task.sleep(nanoseconds: 10_000_000)
         await bus.publish(.themeChanged("Dark+"))
         t.equal(await t1.value, .themeChanged("Dark+"))
@@ -185,6 +192,131 @@ func busAndConfigSuite() -> TestSuite {
     return s
 }
 
+func terminalEmulatorSuite() -> TestSuite {
+    let s = TestSuite("TerminalEmulator")
+
+    s.test("plain text becomes a single span") { t in
+        let emu = TerminalEmulator()
+        emu.feed("hello world")
+        let lines = emu.snapshot()
+        t.equal(lines.count, 1)
+        t.equal(lines[0].plainText, "hello world")
+        t.equal(lines[0].spans.count, 1)
+    }
+
+    s.test("newlines split lines") { t in
+        let emu = TerminalEmulator()
+        emu.feed("one\ntwo\nthree")
+        let lines = emu.snapshot()
+        t.equal(lines.count, 3)
+        t.equal(lines[0].plainText, "one")
+        t.equal(lines[1].plainText, "two")
+        t.equal(lines[2].plainText, "three")
+    }
+
+    s.test("OSC working-directory sequence is stripped (the file:// bug)") { t in
+        let emu = TerminalEmulator()
+        // zsh emits ESC ] 7 ; file://host/path BEL before the prompt.
+        emu.feed("\u{1B}]7;file://Avijeets-MacBook-Air.local/Users/me\u{07}avijeet$ ")
+        let lines = emu.snapshot()
+        t.equal(lines.count, 1)
+        t.equal(lines[0].plainText, "avijeet$ ")
+    }
+
+    s.test("OSC terminated by ST (ESC backslash) is stripped") { t in
+        let emu = TerminalEmulator()
+        emu.feed("\u{1B}]0;window title\u{1B}\\ready")
+        t.equal(emu.snapshot()[0].plainText, "ready")
+    }
+
+    s.test("SGR sets foreground color and resets") { t in
+        let emu = TerminalEmulator()
+        emu.feed("\u{1B}[31mred\u{1B}[0m plain")
+        let spans = emu.snapshot()[0].spans
+        t.equal(spans.count, 2)
+        t.equal(spans[0].text, "red")
+        t.equal(spans[0].style.foreground, TerminalColor.ansi(1))
+        t.equal(spans[1].text, " plain")
+        t.isNil(spans[1].style.foreground)
+    }
+
+    s.test("bright foreground and bold attribute") { t in
+        let emu = TerminalEmulator()
+        emu.feed("\u{1B}[1;92mok")
+        let style = emu.snapshot()[0].spans[0].style
+        t.expect(style.bold)
+        t.equal(style.foreground, TerminalColor.ansi(10))
+    }
+
+    s.test("256-color and truecolor extended SGR") { t in
+        let emu = TerminalEmulator()
+        emu.feed("\u{1B}[38;5;200ma\u{1B}[38;2;10;20;30mb")
+        let spans = emu.snapshot()[0].spans
+        t.equal(spans[0].style.foreground, TerminalColor.palette(200))
+        t.equal(spans[1].style.foreground, TerminalColor.rgb(10, 20, 30))
+    }
+
+    s.test("carriage return overwrites from column zero") { t in
+        let emu = TerminalEmulator()
+        emu.feed("progress 50%\rprogress 100%")
+        t.equal(emu.snapshot()[0].plainText, "progress 100%")
+    }
+
+    s.test("backspace moves cursor back") { t in
+        let emu = TerminalEmulator()
+        emu.feed("abcd\u{08}\u{08}XY")
+        t.equal(emu.snapshot()[0].plainText, "abXY")
+    }
+
+    s.test("erase-in-line to end clears trailing text") { t in
+        let emu = TerminalEmulator()
+        emu.feed("hello world\r\u{1B}[5C\u{1B}[K")
+        t.equal(emu.snapshot()[0].plainText, "hello")
+    }
+
+    s.test("clear screen resets scrollback") { t in
+        let emu = TerminalEmulator()
+        emu.feed("old\nlines\n")
+        emu.feed("\u{1B}[2Jfresh")
+        let lines = emu.snapshot()
+        t.equal(lines.count, 1)
+        t.equal(lines[0].plainText, "fresh")
+    }
+
+    s.test("escape sequence split across feeds is parsed") { t in
+        let emu = TerminalEmulator()
+        emu.feed("\u{1B}[3")
+        emu.feed("1mred")
+        let style = emu.snapshot()[0].spans[0].style
+        t.equal(style.foreground, TerminalColor.ansi(1))
+    }
+
+    s.test("tab advances to next tab stop") { t in
+        let emu = TerminalEmulator()
+        emu.feed("a\tb")
+        t.equal(emu.snapshot()[0].plainText.count, 9)
+    }
+
+    s.test("scrollback is capped") { t in
+        let emu = TerminalEmulator(maxScrollbackLines: 200)
+        for index in 0..<1000 { emu.feed("line \(index)\n") }
+        let lines = emu.snapshot()
+        t.expect(lines.count <= 201)
+        t.equal(lines.first!.id != 0, true)
+    }
+
+    s.test("reset clears everything") { t in
+        let emu = TerminalEmulator()
+        emu.feed("\u{1B}[31msome text\n")
+        emu.reset()
+        let lines = emu.snapshot()
+        t.equal(lines.count, 1)
+        t.equal(lines[0].plainText, "")
+    }
+
+    return s
+}
+
 @main
 struct Runner {
     static func main() async {
@@ -192,7 +324,8 @@ struct Runner {
             colorSuite(),
             themeSuite(),
             coordinateSuite(),
-            busAndConfigSuite()
+            busAndConfigSuite(),
+            terminalEmulatorSuite(),
         ])
     }
 }

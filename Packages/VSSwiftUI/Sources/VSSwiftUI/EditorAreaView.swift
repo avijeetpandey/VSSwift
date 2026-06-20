@@ -26,16 +26,20 @@ public struct EditorAreaView: View {
                     EditorCanvasView(model: editor, theme: theme, configuration: appState.configuration)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     if appState.configuration.showMinimap {
-                        MinimapView(lines: editor.text.components(separatedBy: "\n"),
-                                    tokens: editor.tokens, theme: theme,
-                                    lineHeight: appState.configuration.fontSize * appState.configuration.lineHeightMultiple,
-                                    viewportHeight: 600, scrollOffset: $minimapScroll)
+                        MinimapView(
+                            lines: editor.text.components(separatedBy: "\n"),
+                            tokens: editor.tokens, theme: theme,
+                            lineHeight: appState.configuration.fontSize
+                                * appState.configuration.lineHeightMultiple,
+                            viewportHeight: 600, scrollOffset: $minimapScroll)
                     }
                 }
                 if editor.isCompletionVisible {
-                    CompletionWidget(items: editor.completionItems,
-                                     selectedIndex: $completion.selectedIndex,
-                                     theme: theme) { item in
+                    CompletionWidget(
+                        items: editor.completionItems,
+                        selectedIndex: $completion.selectedIndex,
+                        theme: theme
+                    ) { item in
                         editor.dismissCompletions()
                         _ = item
                     }
@@ -54,10 +58,11 @@ public struct EditorAreaView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 0) {
                     ForEach(appState.openDocuments) { doc in
-                        TabView(doc: doc,
-                                isActive: doc.id == appState.activeDocumentID,
-                                onSelect: { withAnimation(Motion.quick) { appState.activeDocumentID = doc.id } },
-                                onClose: { withAnimation(Motion.snappy) { appState.closeDocument(doc.id) } })
+                        TabView(
+                            doc: doc,
+                            isActive: doc.id == appState.activeDocumentID,
+                            onSelect: { withAnimation(Motion.quick) { appState.activeDocumentID = doc.id } },
+                            onClose: { withAnimation(Motion.snappy) { appState.closeDocument(doc.id) } })
                     }
                 }
             }
@@ -180,7 +185,9 @@ public struct PanelView: View {
                     panelTabButton(tab)
                 }
                 Spacer()
-                Button { withAnimation(Motion.snappy) { appState.isPanelVisible = false } } label: {
+                Button {
+                    withAnimation(Motion.snappy) { appState.isPanelVisible = false }
+                } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Palette.textTertiary)
@@ -198,9 +205,27 @@ public struct PanelView: View {
                 case .terminal:
                     TerminalView(model: terminal, theme: theme)
                 case .problems:
-                    listView(problems.isEmpty ? ["No problems have been detected in the workspace."] : problems)
-                case .output, .debugConsole:
-                    listView(["(\(appState.activePanelTab.title) output)"])
+                    if problems.isEmpty {
+                        emptyState(
+                            icon: "checkmark.seal",
+                            tint: Palette.success,
+                            title: "No problems detected",
+                            message: "Errors and warnings in your workspace will appear here.")
+                    } else {
+                        problemsList(problems)
+                    }
+                case .output:
+                    emptyState(
+                        icon: "text.alignleft",
+                        tint: Palette.info,
+                        title: "No output yet",
+                        message: "Build and task output will be shown in this panel.")
+                case .debugConsole:
+                    emptyState(
+                        icon: "ladybug",
+                        tint: Palette.accentOrange,
+                        title: "Debug console is idle",
+                        message: "Start a debug session to evaluate expressions and read logs.")
                 }
             }
         }
@@ -214,10 +239,22 @@ public struct PanelView: View {
             withAnimation(Motion.quick) { appState.activePanelTab = tab }
         } label: {
             VStack(spacing: 4) {
-                Text(tab.title.uppercased())
-                    .font(.system(size: 11, weight: isActive ? .bold : .medium))
-                    .tracking(0.4)
-                    .foregroundStyle(isActive ? Palette.textPrimary : Palette.textTertiary)
+                HStack(spacing: 6) {
+                    Image(systemName: tab.systemImage)
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(tab.title.uppercased())
+                        .font(.system(size: 11, weight: isActive ? .bold : .medium))
+                        .tracking(0.4)
+                    if tab == .problems, !problems.isEmpty {
+                        Text("\(problems.count)")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Palette.bg)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(Palette.danger))
+                    }
+                }
+                .foregroundStyle(isActive ? Palette.textPrimary : Palette.textTertiary)
                 Rectangle()
                     .fill(isActive ? AnyShapeStyle(Palette.accentBarGradient) : AnyShapeStyle(Color.clear))
                     .frame(height: 2)
@@ -228,17 +265,47 @@ public struct PanelView: View {
         .buttonStyle(.plain)
     }
 
-    private func listView(_ items: [String]) -> some View {
+    private func problemsList(_ items: [String]) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    Text(item)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(Palette.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Palette.warning)
+                            .padding(.top, 1)
+                        Text(item)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(Palette.textSecondary)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .hoverHighlight(cornerRadius: 6)
                 }
             }
-            .padding(12)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 6)
         }
+    }
+
+    private func emptyState(icon: String, tint: Color, title: String, message: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 26, weight: .light))
+                .foregroundStyle(tint.opacity(0.9))
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Palette.textSecondary)
+            Text(message)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Palette.textTertiary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Palette.bg)
     }
 }
