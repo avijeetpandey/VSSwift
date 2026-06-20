@@ -1,10 +1,30 @@
 # VSSwift
 
+[![CI](https://github.com/avijeetpandey/VSSwift/actions/workflows/ci.yml/badge.svg)](https://github.com/avijeetpandey/VSSwift/actions/workflows/ci.yml)
+[![Swift 6](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue.svg)](https://www.apple.com/macos)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+> ⚠️ **This is a fun, vibe-coded project — not for production use.** It's an experiment
+> in building a VSCode-style editor in pure Swift/SwiftUI for the joy of it. Expect rough
+> edges, missing features, and code written for delight rather than battle-hardening. 🙂
+
 An enterprise-grade, modular **macOS native code editor** built with Swift & SwiftUI that
 mirrors the Visual Studio Code UI/UX while keeping a strict, decoupled, actor-based
 architecture. The text canvas is engineered to handle **100,000+ line files** with a
 **0 ms main-thread budget** by isolating every expensive subsystem (LSP, syntax parsing,
 file watching, search) behind Swift Concurrency actors.
+
+## Features
+
+- 📁 **Open Folder** — native folder picker (⌘O) to open any project.
+- 💻 **`vsswift` CLI** — `vsswift .` opens the current folder, just like `code .`.
+- 🌳 **Source Control** — VSCode-style Git panel: stage/unstage, discard, commit, diffs,
+  live branch in the status bar.
+- 🔎 **Workspace search** — parallel, ripgrep-style regex search across the tree.
+- ⌨️ **Keyboard shortcuts** — ⌘B/⌘J/⌘\`, ⌘⇧E/⌘⇧F/⌃⇧G and more.
+- 🖥️ **Integrated terminal** — a real PTY-backed shell.
+- 🎨 **Semantic highlighting** — swift-syntax tokens + `sourcekit-lsp` completion.
 
 ---
 
@@ -53,8 +73,8 @@ direction only** (downward); a lower layer must never import a higher one:
 - Expensive work runs on **actors** (`TextDocument`, `LSPClient`, `WorkspaceManager`,
   `FileSystemWatcher`); results are hopped to `@MainActor` for UI application.
 
-The full engineering rationale (rendering math, concurrency model, UI bridging) lives in
-[`PHASE0_ANALYSIS.md`](./PHASE0_ANALYSIS.md).
+The full engineering rationale (rendering math, concurrency model, UI bridging) is
+captured throughout the source comments and this README.
 
 ---
 
@@ -234,12 +254,33 @@ under heavy I/O load.
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Engineering analysis (`PHASE0_ANALYSIS.md`) | ✅ |
+| 0 | Engineering analysis (concurrency & rendering model) | ✅ |
 | 1 | Core models + theme engine + SwiftUI workbench shell | ✅ |
 | 2 | High-performance engine: buffer, Fenwick index, folding, minimap | ✅ |
 | 3 | Multi-cursor `SelectionManager` | ✅ |
 | 4 | swift-syntax semantic tokens + `sourcekit-lsp` client + completion UI | ✅ |
 | 5 | Multi-root workspace tree + FSEvents + parallel search + PTY terminal | ✅ |
+| 6 | Open Folder + `vsswift` CLI + Source Control (`VSSwiftGit`) + shortcuts | ✅ |
 
 All logic packages compile under Swift 6 strict concurrency with passing test suites; the
 `VSSwiftApp` executable builds and links.
+
+---
+
+## Contributing
+
+Contributions are welcome in the same playful spirit the project was built in! See
+[CONTRIBUTING.md](./CONTRIBUTING.md) and the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+```bash
+./run.sh --build-only   # build
+./run.sh --test         # run all suites
+./run.sh --format       # apply swift-format
+./run.sh --lint         # check formatting (advisory)
+```
+
+## License
+
+Released under the [MIT License](./LICENSE). Again: this is a **fun, vibe-coded
+experiment — not for production use**. Have fun with it! ✨
+
