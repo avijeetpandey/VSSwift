@@ -21,12 +21,14 @@ public final class WorkbenchModel: ObservableObject {
 
     private let searchEngine = SearchEngine()
     private var watcher: FileSystemWatcher?
+    @Published public private(set) var rootDirectory: URL
 
     public init(rootDirectory: URL? = nil) {
         let root = rootDirectory ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
         let manager = WorkspaceManager(roots: [root])
         self.workspace = manager
         self.explorer = ExplorerModel(manager: manager)
+        self.rootDirectory = root
         appState.gitBranch = "main"
         appState.openDocument(EditorDocument(url: root.appendingPathComponent("Untitled.swift"), languageID: "swift"))
         Task { await explorer.loadRoots() }
@@ -34,6 +36,7 @@ public final class WorkbenchModel: ObservableObject {
     }
 
     private func startWatching(root: URL) {
+        watcher?.stop()
         let watcher = FileSystemWatcher(paths: [root])
         watcher.start()
         self.watcher = watcher
@@ -41,6 +44,24 @@ public final class WorkbenchModel: ObservableObject {
             for await _ in watcher.changes {
                 await self?.explorer.loadRoots()
             }
+        }
+    }
+
+    /// Opens `url` as the new workspace root: swaps the workspace roots, rebuilds the
+    /// explorer tree, restarts the file-system watcher, and resets open editors.
+    public func openFolder(_ url: URL) {
+        var isDir: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else { return }
+        rootDirectory = url
+        FileManager.default.changeCurrentDirectoryPath(url.path)
+        appState.openDocuments = []
+        appState.activeDocumentID = nil
+        explorer.reset()
+        startWatching(root: url)
+        Task { [weak self] in
+            guard let self else { return }
+            await self.workspace.setRoots([url])
+            await self.explorer.loadRoots()
         }
     }
 

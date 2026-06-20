@@ -18,6 +18,14 @@ struct VSSwiftApp: App {
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified)
         .commands {
+            CommandGroup(after: .newItem) {
+                Button("Open Folder…") {
+                    if let url = FolderPicker.presentOpenFolder() {
+                        model.openFolder(url)
+                    }
+                }
+                .keyboardShortcut("o", modifiers: .command)
+            }
             CommandGroup(after: .sidebar) {
                 Button("Toggle Sidebar") { model.appState.toggleSidebar() }
                     .keyboardShortcut("b", modifiers: .command)
