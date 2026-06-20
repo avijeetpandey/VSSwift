@@ -62,6 +62,11 @@ public actor WorkspaceManager {
         if !roots.contains(url) { roots.append(url) }
     }
 
+    /// Replaces the entire set of workspace roots (used when opening a new folder).
+    public func setRoots(_ urls: [URL]) {
+        roots = urls
+    }
+
     public func removeRoot(_ url: URL) {
         roots.removeAll { $0 == url }
     }
