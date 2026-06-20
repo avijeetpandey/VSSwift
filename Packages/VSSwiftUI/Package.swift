@@ -12,13 +12,14 @@ let package = Package(
         .package(path: "../VSSwiftEngine"),
         .package(path: "../VSSwiftLSP"),
         .package(path: "../VSSwiftSyntax"),
-        .package(path: "../VSSwiftWorkspace")
+        .package(path: "../VSSwiftWorkspace"),
+        .package(path: "../VSSwiftGit")
     ],
     targets: [
         .target(
             name: "VSSwiftUI",
             dependencies: [
-                "VSSwiftCore", "VSSwiftEngine", "VSSwiftLSP", "VSSwiftSyntax", "VSSwiftWorkspace"
+                "VSSwiftCore", "VSSwiftEngine", "VSSwiftLSP", "VSSwiftSyntax", "VSSwiftWorkspace", "VSSwiftGit"
             ],
             swiftSettings: [.swiftLanguageMode(.v6)]
         )
