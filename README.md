@@ -28,6 +28,30 @@ file watching, search) behind Swift Concurrency actors.
 
 ---
 
+## Screenshots
+
+> Rendered straight from the app via its built-in headless snapshot tool
+> (`VSSWIFT_RENDER`), so these are the real SwiftUI/AppKit workbench — not mockups.
+
+### Editor + integrated terminal
+The file explorer, a TextKit 2 editor with live swift-syntax highlighting, the minimap,
+and a real PTY-backed terminal.
+
+![VSSwift editor with explorer and integrated terminal](docs/screenshots/editor.png)
+
+### Source Control
+A VSCode-style Git panel — staged/unstaged changes with status badges, a commit box,
+and the active branch in the status bar.
+
+![VSSwift Source Control panel](docs/screenshots/source-control.png)
+
+### Workspace search
+Parallel, ripgrep-style regex search across the workspace with per-file results.
+
+![VSSwift workspace search](docs/screenshots/search.png)
+
+---
+
 ## Table of Contents
 1. [Architecture & Layer Constraints](#architecture--layer-constraints)
 2. [SPM Module Map](#spm-module-map)
@@ -222,6 +246,22 @@ xcode-select --install
 
 For best results open a folder that is a valid Swift package (contains `Package.swift`) so
 `sourcekit-lsp` can resolve the build settings for completion and diagnostics.
+
+---
+
+## Regenerating the screenshots
+
+The README screenshots are produced by the app's headless snapshot tool, which renders the
+real workbench (including the AppKit text canvas) to a PNG. Set `VSSWIFT_RENDER` to the
+output path and `VSSWIFT_RENDER_SCENE` to one of `editor`, `sourceControl`, or `search`:
+
+```bash
+swift build -c release
+BIN=.build/release/VSSwift
+VSSWIFT_RENDER=docs/screenshots/editor.png         VSSWIFT_RENDER_SCENE=editor        "$BIN"
+VSSWIFT_RENDER=docs/screenshots/source-control.png VSSWIFT_RENDER_SCENE=sourceControl "$BIN"
+VSSWIFT_RENDER=docs/screenshots/search.png         VSSWIFT_RENDER_SCENE=search        "$BIN"
+```
 
 ---
 
