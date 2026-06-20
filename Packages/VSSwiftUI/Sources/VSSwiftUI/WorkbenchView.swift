@@ -15,6 +15,7 @@ public final class WorkbenchModel: ObservableObject {
     @Published public var editor = EditorViewModel(text: sampleSwift, languageID: "swift")
     public let explorer: ExplorerModel
     public let workspace: WorkspaceManager
+    public let git: GitViewModel
 
     @Published public var searchQuery: String = ""
     @Published public var searchResults: [SearchMatch] = []
@@ -29,9 +30,14 @@ public final class WorkbenchModel: ObservableObject {
         self.workspace = manager
         self.explorer = ExplorerModel(manager: manager)
         self.rootDirectory = root
+        self.git = GitViewModel(root: root)
         appState.gitBranch = "main"
         appState.openDocument(EditorDocument(url: root.appendingPathComponent("Untitled.swift"), languageID: "swift"))
+        git.onStatusChanged = { [weak appState] status in
+            appState?.gitBranch = status.isRepository ? status.branch : nil
+        }
         Task { await explorer.loadRoots() }
+        git.refresh()
         startWatching(root: root)
     }
 
@@ -43,6 +49,7 @@ public final class WorkbenchModel: ObservableObject {
         Task { [weak self] in
             for await _ in watcher.changes {
                 await self?.explorer.loadRoots()
+                self?.git.refresh()
             }
         }
     }
@@ -58,6 +65,7 @@ public final class WorkbenchModel: ObservableObject {
         appState.activeDocumentID = nil
         explorer.reset()
         startWatching(root: url)
+        git.setRoot(url)
         Task { [weak self] in
             guard let self else { return }
             await self.workspace.setRoots([url])
@@ -98,6 +106,7 @@ public struct WorkbenchView: View {
                 ActivityBarView(appState: model.appState, theme: theme)
                 if model.appState.isSidebarVisible {
                     SidebarView(appState: model.appState, theme: theme, explorer: model.explorer,
+                                git: model.git,
                                 searchQuery: $model.searchQuery, searchResults: model.searchResults,
                                 onSearch: { _ in model.runSearch() },
                                 onOpenFile: { model.openFile($0) })
