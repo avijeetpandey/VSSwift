@@ -7,6 +7,8 @@
 #   ./run.sh --debug         Build in debug mode and launch
 #   ./run.sh --build-only    Build without launching
 #   ./run.sh --test          Build and run all package test suites
+#   ./run.sh --format        Apply swift-format in place
+#   ./run.sh --lint          Check formatting (swift-format lint, non-failing)
 #   ./run.sh --clean         Remove build artifacts, then build and launch
 #   ./run.sh -h | --help     Show this help
 #
@@ -27,9 +29,11 @@ for arg in "$@"; do
     --release)    CONFIG="release" ;;
     --build-only) ACTION="build" ;;
     --test)       ACTION="test" ;;
+    --format)     ACTION="format" ;;
+    --lint)       ACTION="lint" ;;
     --clean)      ACTION="clean" ;;
     -h|--help)
-      sed -n '3,12p' "$0" | sed 's/^#\{1,\} \{0,1\}//; s/^#//'
+      sed -n '3,14p' "$0" | sed 's/^#\{1,\} \{0,1\}//; s/^#//'
       exit 0 ;;
     *)
       echo "Unknown option: $arg" >&2
@@ -39,6 +43,32 @@ for arg in "$@"; do
 done
 
 bold() { printf "\033[1m%s\033[0m\n" "$1"; }
+
+# Resolve a swift-format binary (toolchain ships one; fall back to xcrun).
+swift_format() {
+  if command -v swift-format >/dev/null 2>&1; then
+    swift-format "$@"
+  else
+    xcrun swift-format "$@"
+  fi
+}
+
+FORMAT_TARGETS=(Sources)
+for dir in Packages/*/Sources; do FORMAT_TARGETS+=("$dir"); done
+
+if [ "$ACTION" = "format" ]; then
+  bold "🎨  Formatting Swift sources…"
+  swift_format format --in-place --configuration .swift-format --recursive "${FORMAT_TARGETS[@]}"
+  bold "✅  Formatted."
+  exit 0
+fi
+
+if [ "$ACTION" = "lint" ]; then
+  bold "🔎  Linting Swift formatting (advisory)…"
+  swift_format lint --configuration .swift-format --recursive "${FORMAT_TARGETS[@]}" || true
+  bold "✅  Lint check complete."
+  exit 0
+fi
 
 if [ "$ACTION" = "clean" ]; then
   bold "🧹  Cleaning build artifacts…"
