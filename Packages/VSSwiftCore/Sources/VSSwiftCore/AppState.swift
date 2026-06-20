@@ -94,6 +94,30 @@ public final class AppState: ObservableObject {
         }
     }
 
+    /// Reveals an activity view, always showing the sidebar (used by keyboard
+    /// shortcuts like ⌘⇧E / ⌘⇧F / ⌃⇧G which "show" rather than toggle).
+    public func revealActivity(_ item: ActivityItem) {
+        activeActivityItem = item
+        isSidebarVisible = true
+    }
+
+    /// Shows the bottom panel focused on `tab`.
+    public func showPanel(_ tab: PanelTab) {
+        activePanelTab = tab
+        isPanelVisible = true
+    }
+
+    /// Toggles the integrated terminal (⌘`): hides the panel if the terminal is
+    /// already showing, otherwise reveals the panel on the terminal tab.
+    public func toggleTerminal() {
+        if isPanelVisible && activePanelTab == .terminal {
+            isPanelVisible = false
+        } else {
+            activePanelTab = .terminal
+            isPanelVisible = true
+        }
+    }
+
     @discardableResult
     public func openDocument(_ document: EditorDocument) -> EditorDocument {
         if !openDocuments.contains(where: { $0.id == document.id }) {

@@ -51,6 +51,21 @@ struct VSSwiftApp: App {
                     .keyboardShortcut("b", modifiers: .command)
                 Button("Toggle Panel") { model.appState.togglePanel() }
                     .keyboardShortcut("j", modifiers: .command)
+                Button("Toggle Terminal") { model.appState.toggleTerminal() }
+                    .keyboardShortcut("`", modifiers: .command)
+
+                Divider()
+
+                Button("Show Explorer") { model.appState.revealActivity(.explorer) }
+                    .keyboardShortcut("e", modifiers: [.command, .shift])
+                Button("Show Search") { model.appState.revealActivity(.search) }
+                    .keyboardShortcut("f", modifiers: [.command, .shift])
+                Button("Show Source Control") { model.appState.revealActivity(.sourceControl) }
+                    .keyboardShortcut("g", modifiers: [.control, .shift])
+                Button("Show Run and Debug") { model.appState.revealActivity(.debug) }
+                    .keyboardShortcut("d", modifiers: [.command, .shift])
+                Button("Show Extensions") { model.appState.revealActivity(.extensions) }
+                    .keyboardShortcut("x", modifiers: [.command, .shift])
             }
         }
     }

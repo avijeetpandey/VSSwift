@@ -120,7 +120,13 @@ GIT_CONFIG_COUNT=0 swift build -c release
 |---|---|
 | ⌘B | Toggle sidebar |
 | ⌘J | Toggle bottom panel |
+| ⌘` | Toggle integrated terminal |
 | ⌘O | Open folder… |
+| ⌘⇧E | Show Explorer |
+| ⌘⇧F | Show Search |
+| ⌃⇧G | Show Source Control |
+| ⌘⇧D | Show Run and Debug |
+| ⌘⇧X | Show Extensions |
 
 ### `vsswift` command-line launcher
 
