@@ -171,10 +171,23 @@ public final class ExplorerModel: ObservableObject {
 
     public func loadRoots() async {
         roots = await manager.rootNodes()
+        // Drop caches for folders that are no longer part of the workspace.
+        let validRoots = Set(roots.map(\.url))
+        childrenByURL = childrenByURL.filter { entry in
+            validRoots.contains(entry.key) || roots.contains { $0.url == entry.key }
+        }
         for root in roots {
             expanded.insert(root.url)
             await loadChildren(of: root.url)
         }
+    }
+
+    /// Clears all cached tree state. Used when switching to a different folder.
+    public func reset() {
+        roots = []
+        childrenByURL = [:]
+        expanded = []
+        selected = nil
     }
 
     public func loadChildren(of url: URL) async {
