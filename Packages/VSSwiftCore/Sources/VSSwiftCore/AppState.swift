@@ -30,6 +30,16 @@ public enum PanelTab: String, Sendable, CaseIterable, Identifiable {
         case .terminal: return "Terminal"
         }
     }
+
+    /// SF Symbol used in the panel tab bar.
+    public var systemImage: String {
+        switch self {
+        case .problems: return "exclamationmark.triangle"
+        case .output: return "text.alignleft"
+        case .debugConsole: return "ladybug"
+        case .terminal: return "terminal"
+        }
+    }
 }
 
 /// An open editor document descriptor (UI-level; the buffer lives in VSSwiftEngine).
