@@ -82,7 +82,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApplication.shared.applicationIconImage = image
         }
         if let path = ProcessInfo.processInfo.environment["VSSWIFT_RENDER"] {
-            WorkbenchSnapshot.render(to: path)
+            let scene = WorkbenchSnapshot.Scene(name: ProcessInfo.processInfo.environment["VSSWIFT_RENDER_SCENE"])
+            WorkbenchSnapshot.render(to: path, scene: scene)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 NSApplication.shared.terminate(nil)
             }
