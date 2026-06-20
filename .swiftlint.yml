@@ -1,0 +1,79 @@
+# SwiftLint configuration for VSSwift
+# https://github.com/realm/SwiftLint
+#
+# A pragmatic ruleset for a fun, vibe-coded SwiftUI/AppKit project. Generated
+# build artifacts and vendored checkouts are excluded.
+
+included:
+  - Sources
+  - Packages
+
+excluded:
+  - .build
+  - Packages/*/.build
+  - "**/.build"
+  - "**/Tests"
+
+disabled_rules:
+  - todo
+  - trailing_comma
+  - opening_brace
+  - multiple_closures_with_trailing_closure
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - first_where
+  - contains_over_first_not_nil
+  - last_where
+  - sorted_first_last
+  - closure_end_indentation
+  - redundant_nil_coalescing
+  - explicit_init
+
+line_length:
+  warning: 120
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+identifier_name:
+  min_length: 1
+  excluded:
+    - id
+    - x
+    - y
+    - n
+    - s
+    - t
+    - a
+    - b
+    - r
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 50
+    error: 60
+
+function_body_length:
+  warning: 80
+  error: 150
+
+type_body_length:
+  warning: 350
+  error: 500
+
+file_length:
+  warning: 600
+  error: 1000
+  ignore_comment_only_lines: true
+
+cyclomatic_complexity:
+  warning: 18
+  error: 30
+
+nesting:
+  type_level: 3
+
+reporter: "xcode"
