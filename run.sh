@@ -49,7 +49,7 @@ fi
 if [ "$ACTION" = "test" ]; then
   bold "🧪  Running all VSSwift test suites…"
   FAILED=0
-  for pkg in Core Engine LSP Syntax Workspace; do
+  for pkg in Core Engine LSP Syntax Workspace Git; do
     bold "── VSSwift${pkg} ──"
     if ( cd "Packages/VSSwift${pkg}" && swift run "VSSwift${pkg}Tests" ); then
       :

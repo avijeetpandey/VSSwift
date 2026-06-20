@@ -8,17 +8,19 @@ public struct SidebarView: View {
     @ObservedObject var appState: AppState
     var theme: Theme
     @ObservedObject var explorer: ExplorerModel
+    @ObservedObject var git: GitViewModel
     @Binding var searchQuery: String
     var searchResults: [SearchMatch]
     var onSearch: (String) -> Void
     var onOpenFile: (URL) -> Void
 
-    public init(appState: AppState, theme: Theme, explorer: ExplorerModel,
+    public init(appState: AppState, theme: Theme, explorer: ExplorerModel, git: GitViewModel,
                 searchQuery: Binding<String>, searchResults: [SearchMatch],
                 onSearch: @escaping (String) -> Void, onOpenFile: @escaping (URL) -> Void) {
         self.appState = appState
         self.theme = theme
         self.explorer = explorer
+        self.git = git
         self._searchQuery = searchQuery
         self.searchResults = searchResults
         self.onSearch = onSearch
@@ -37,6 +39,15 @@ public struct SidebarView: View {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Palette.textTertiary)
+                }
+                if appState.activeActivityItem == .sourceControl {
+                    Button(action: { git.refresh() }) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Palette.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Refresh")
                 }
             }
             .padding(.horizontal, 14)
@@ -67,6 +78,8 @@ public struct SidebarView: View {
             FileExplorerView(explorer: explorer, onOpenFile: onOpenFile)
         case .search:
             searchPanel
+        case .sourceControl:
+            SourceControlView(git: git, onOpenFile: onOpenFile)
         default:
             emptyState
         }

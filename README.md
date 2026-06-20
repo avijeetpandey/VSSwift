@@ -67,6 +67,7 @@ The full engineering rationale (rendering math, concurrency model, UI bridging) 
 | **VSSwiftLSP** | macOS 13 | Core | `JSONValue`, `Content-Length` message framing + parser, LSP lifecycle Codables, actor `LSPClient` wrapping `Process`. |
 | **VSSwiftSyntax** | macOS 13 | Core, [swift-syntax 600.0.1](https://github.com/apple/swift-syntax) | `UTF8PositionConverter`, `SwiftTokenParser` (`SyntaxVisitor` → `VSSwiftToken`). |
 | **VSSwiftWorkspace** | macOS 13 | Core | `FileNode`/`FileTreeLoader`, actor `WorkspaceManager`, parallel `TaskGroup` regex `SearchEngine`, FSEvents `FileSystemWatcher`. |
+| **VSSwiftGit** | macOS 13 | Core | `GitRunner` (non-interactive git subprocess), `GitStatusParser`, actor `GitService` (status, branch, stage/unstage, discard, commit, diff). |
 | **VSSwiftUI** | macOS 14 | Core, Engine, LSP, Workspace, Syntax | SwiftUI workbench shell, `EditorCanvasView` (TextKit 2 `NSTextView` via `NSViewRepresentable`), `CompletionWidget`, activity/status bars, sidebar/explorer, PTY `PseudoTerminal` + terminal view, minimap, `WorkbenchModel`/`WorkbenchView`. |
 | **VSTestKit** | macOS 13 | — | Custom XCTest-free test harness (see below). |
 | **VSSwiftApp** (root) | macOS 14 | VSSwiftUI | `@main` executable; hosts `WorkbenchView` in a `WindowGroup` with ⌘B / ⌘J shortcuts. |
@@ -155,9 +156,10 @@ backed by the custom **VSTestKit** harness. Run a suite with `swift run`:
 (cd Packages/VSSwiftLSP       && GIT_CONFIG_COUNT=0 swift run VSSwiftLSPTests)
 (cd Packages/VSSwiftSyntax    && GIT_CONFIG_COUNT=0 swift run VSSwiftSyntaxTests)
 (cd Packages/VSSwiftWorkspace && GIT_CONFIG_COUNT=0 swift run VSSwiftWorkspaceTests)
+(cd Packages/VSSwiftGit       && GIT_CONFIG_COUNT=0 swift run VSSwiftGitTests)
 
 # Or run them all
-for p in Core Engine LSP Syntax Workspace; do
+for p in Core Engine LSP Syntax Workspace Git; do
   (cd Packages/VSSwift$p && GIT_CONFIG_COUNT=0 swift run VSSwift${p}Tests)
 done
 ```
@@ -171,6 +173,8 @@ done
 - **Syntax**: `SwiftTokenParser` entity→scope mapping, UTF-8 column accuracy with unicode,
   throughput (22k tokens in ~56 ms).
 - **Workspace**: file-tree loading, parallel regex search, **live FSEvents** detection.
+- **Git**: porcelain status parsing (branch/ahead-behind/rename/conflict) and a **live
+  repository** stage/unstage/commit/discard/diff lifecycle.
 
 ---
 
