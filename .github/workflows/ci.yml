@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test (macOS)
+    runs-on: macos-14
+    env:
+      # SwiftPM dependency resolution can break with injected git config.
+      GIT_CONFIG_COUNT: 0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build -c debug
+
+      - name: Run test suites
+        run: |
+          set -e
+          for pkg in Core Engine LSP Syntax Workspace Git; do
+            echo "── VSSwift${pkg} ──"
+            (cd "Packages/VSSwift${pkg}" && swift run "VSSwift${pkg}Tests")
+          done
+
+  format:
+    name: swift-format (advisory)
+    runs-on: macos-14
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint formatting
+        run: |
+          swift-format lint --configuration .swift-format --recursive \
+            Sources Packages/*/Sources/* || true
