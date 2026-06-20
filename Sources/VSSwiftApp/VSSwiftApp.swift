@@ -7,8 +7,28 @@ import VSSwiftCore
 /// wires up the VSCode-style keyboard shortcuts for toggling the sidebar and panel.
 @main
 struct VSSwiftApp: App {
-    @StateObject private var model = WorkbenchModel()
+    @StateObject private var model = WorkbenchModel(rootDirectory: VSSwiftApp.initialRoot())
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    /// Resolves the folder to open at launch. The `vsswift` CLI passes the target
+    /// directory via the `VSSWIFT_OPEN` environment variable; a directory given as a
+    /// command-line argument is also honored. Falls back to the current directory.
+    static func initialRoot() -> URL? {
+        let fm = FileManager.default
+        func directory(at path: String) -> URL? {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else { return nil }
+            return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+        }
+        if let path = ProcessInfo.processInfo.environment["VSSWIFT_OPEN"], !path.isEmpty,
+           let url = directory(at: path) {
+            return url
+        }
+        for arg in CommandLine.arguments.dropFirst() {
+            if let url = directory(at: arg) { return url }
+        }
+        return nil
+    }
 
     var body: some Scene {
         WindowGroup {
