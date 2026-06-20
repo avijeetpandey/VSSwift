@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+#
+# vsswift — open a folder/project in the VSSwift editor from the terminal.
+#
+# Usage:
+#   vsswift [folder]     Open <folder> (defaults to the current directory)
+#   vsswift .            Open the current directory
+#   vsswift -h | --help  Show this help
+#
+# Mirrors VSCode's `code .`. Resolves the target folder, builds the editor on
+# first use, and launches it in the background so your shell returns immediately.
+#
+set -euo pipefail
+
+# Resolve the directory of this script, following symlinks (so it works when the
+# script is symlinked onto PATH by install-cli.sh).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+ROOT="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+
+case "${1:-}" in
+  -h|--help)
+    sed -n '3,11p' "$0" | sed 's/^#\{1,\} \{0,1\}//; s/^#//'
+    exit 0 ;;
+esac
+
+TARGET="${1:-.}"
+if ! TARGET_PATH="$(cd "$TARGET" 2>/dev/null && pwd)"; then
+  echo "vsswift: '$TARGET' is not a directory" >&2
+  exit 1
+fi
+
+# SwiftPM dependency resolution needs this in the sandboxed environment.
+export GIT_CONFIG_COUNT=0
+
+BIN="$ROOT/.build/release/VSSwift"
+if [ ! -x "$BIN" ]; then
+  echo "vsswift: building the editor (first run, this can take a few minutes)…" >&2
+  ( cd "$ROOT" && swift build -c release >&2 )
+fi
+if [ ! -x "$BIN" ]; then
+  BIN="$(cd "$ROOT" && swift build -c release --show-bin-path 2>/dev/null | tail -1)/VSSwift"
+fi
+
+echo "vsswift: opening $TARGET_PATH" >&2
+VSSWIFT_OPEN="$TARGET_PATH" nohup "$BIN" >/dev/null 2>&1 &
+disown 2>/dev/null || true

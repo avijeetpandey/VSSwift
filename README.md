@@ -119,6 +119,26 @@ GIT_CONFIG_COUNT=0 swift build -c release
 |---|---|
 | ⌘B | Toggle sidebar |
 | ⌘J | Toggle bottom panel |
+| ⌘O | Open folder… |
+
+### `vsswift` command-line launcher
+
+Open any folder in the editor straight from the terminal, just like VSCode's `code .`:
+
+```bash
+# One-time install (symlinks `vsswift` onto your PATH)
+./install-cli.sh                 # installs into /usr/local/bin
+./install-cli.sh "$HOME/.local/bin"   # or a custom, writable dir
+
+# Then, from any project folder:
+vsswift .                        # open the current directory
+vsswift ~/dev/some-project       # open a specific folder
+vsswift --help                   # usage
+```
+
+On first use the launcher builds the release binary, then launches the editor in
+the background (your shell returns immediately). The target folder is passed to the
+app via the `VSSWIFT_OPEN` environment variable.
 
 ---
 
